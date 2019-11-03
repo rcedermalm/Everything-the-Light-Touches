@@ -1,7 +1,13 @@
 #include <iostream>
-#include <glm.hpp>
+
+#include <Camera.h>
+#include <Scene.h>
 
 int main() {
     std::cout << "~ Everything the light touches ~" << std::endl;
+
+    Camera camera(ImageResolution::RESOLUTION_720p);
+    Scene scene = Scene::createDefaultScene();
+
     return 0;
 }
