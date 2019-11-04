@@ -1,5 +1,7 @@
 #include <glm.hpp>
 #include <vector>
+#include <MaterialProperties.h>
+#include <memory>
 
 /**********************************/
 /***         SceneObject        ***/
@@ -8,7 +10,10 @@
 class SceneObject {
 
 protected:
-    SceneObject() = default;
+    explicit SceneObject(MaterialProperties inMaterial);
+
+private:
+    MaterialProperties material;
 };
 
 /**********************************/
@@ -18,7 +23,7 @@ protected:
 class Sphere: public SceneObject {
 
 public:
-    Sphere(float inRadius, glm::vec3 inCenterPosition);
+    Sphere(float inRadius, glm::vec3 inCenterPosition, MaterialProperties material);
 
 private:
     float radius;
@@ -26,13 +31,16 @@ private:
 };
 
 /**********************************/
-/***       SceneObject Box      ***/
+/***  SceneObject VertexObject  ***/
 /**********************************/
 
-class Box: public SceneObject {
-
+class VertexObject: public SceneObject {
 public:
-    Box(float height, float width, float depth, glm::mat4x4 transform);
+    VertexObject(std::vector<glm::vec3>& inVertices, std::vector<glm::ivec3>& inTriangleIndices, MaterialProperties material);
+
+    // Factory functions to create specific vertex objects
+    static std::shared_ptr<VertexObject> createBox(float height, float width, float depth, glm::mat4x4 transform, MaterialProperties material);
+    static std::shared_ptr<VertexObject> createPlane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, MaterialProperties material);
 
 private:
     std::vector<glm::vec3> vertices;
@@ -41,4 +49,5 @@ private:
 
     glm::vec3 calculateTriangleNormal(int index);
 };
+
 
