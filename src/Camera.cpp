@@ -19,11 +19,32 @@ Camera::Camera(ImageResolution imageResolution) {
             pixelWidth = 100;
             break;
     }
+
+    pixels.resize(pixelHeight);
+    for ( int i = 0 ; i < pixelHeight ; i++ )
+        pixels[i].resize(pixelWidth);
 }
 
 ///----------------------------------------------
 
-void Camera::createImage() {
+void Camera::renderImage() {
+    generateImage();
+}
 
+///----------------------------------------------
+
+void Camera::generateImage() {
+    FILE *f = fopen("renderedImage.ppm", "wb");
+    fprintf(f, "P6\n%i %i 255\n", pixelWidth, pixelHeight);
+
+    for (int i = 0; i < pixelHeight; i++) {
+        for (int j = 0; j < pixelWidth; j++) {
+            glm::vec3 pixel = pixels[i][j];
+            fputc((int) (pixel.r), f);
+            fputc((int) (pixel.g), f);
+            fputc((int) (pixel.b), f);
+        }
+    }
+    fclose(f);
 }
 

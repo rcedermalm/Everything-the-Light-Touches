@@ -1,5 +1,7 @@
 #include "SceneObject.h"
 
+const float EPSILON = 1e-4;
+
 /**********************************/
 /***         SceneObject        ***/
 /**********************************/
@@ -13,6 +15,58 @@ SceneObject::SceneObject(MaterialProperties inMaterial)
 
 Sphere::Sphere(float inRadius, glm::vec3 inCenterPosition, MaterialProperties material)
 : SceneObject(material), radius(inRadius), centerPosition(inCenterPosition) {}
+
+///----------------------------------------------
+
+bool Sphere::intersect(Ray currentRay) {
+    float a = 1; // Dot product of rays direction with itself
+    glm::vec3 dirRayOriginToCenter = currentRay.getStartPoint() - centerPosition; //L
+    float b = glm::dot((2.f * currentRay.getDirection()), dirRayOriginToCenter);
+    float c = glm::dot(dirRayOriginToCenter, dirRayOriginToCenter) - radius * radius;
+
+    float d0, d1;
+    if (!Sphere::solveQuadratic(a, b, c, d0, d1)) return false;
+
+    if (d0 > d1) std::swap(d0, d1);
+
+    if (d0 < 0) {
+        d0 = d1;
+        if (d0 < 0) return false;
+    }
+
+    if(abs(d0) < EPSILON)
+        return false;
+
+    // We have an intersection
+    if(currentRay.foundCloserRayIntersection(d0)){
+        glm::vec3 intersectionPoint = currentRay.getStartPoint() + d0 * currentRay.getDirection();
+        glm::vec3 intersectionNormal = intersectionPoint - centerPosition;
+
+        std::shared_ptr<RayIntersection> newIntersection = std::make_shared<RayIntersection>(
+                intersectionPoint, intersectionNormal, d0, material);
+
+        currentRay.updateRayIntersection(newIntersection);
+    }
+    return true;
+}
+
+///----------------------------------------------
+
+bool Sphere::solveQuadratic(const float &a, const float &b, const float &c, float &x0, float &x1) {
+    float discriminant = b * b - 4 * a * c;
+    if (discriminant < 0) return false;
+    else if (glm::abs(discriminant) < EPSILON) x0 = x1 = - 0.5 * b / a;
+    else {
+        float q = (b > 0) ?
+                  -0.5f * (b + sqrtf(discriminant)) :
+                  -0.5f * (b - sqrtf(discriminant));
+        x0 = q / a;
+        x1 = c / q;
+    }
+    if (x0 > x1) std::swap(x0, x1);
+
+    return true;
+}
 
 /**********************************/
 /***  SceneObject VertexObject  ***/
@@ -95,4 +149,10 @@ std::shared_ptr<VertexObject> VertexObject::createPlane(
     planeTriangleIndices.emplace_back(2, 3, 0);
 
     return std::make_shared<VertexObject>(planeVertices, planeTriangleIndices, material);
+}
+
+///----------------------------------------------
+
+bool VertexObject::intersect(Ray currentRay) {
+    return false;
 }

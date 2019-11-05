@@ -1,3 +1,6 @@
+#include <vector>
+#include <fstream>
+#include <glm.hpp>
 
 enum class ImageResolution {
     RESOLUTION_480p,
@@ -10,8 +13,11 @@ class Camera {
 public:
     explicit Camera(ImageResolution imageResolution);
 
-    void createImage();
+    void renderImage();
 
 private:
     int pixelHeight, pixelWidth;
+    std::vector<std::vector<glm::vec3>> pixels;
+
+    void generateImage();
 };

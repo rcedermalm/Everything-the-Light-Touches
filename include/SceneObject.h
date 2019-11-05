@@ -1,18 +1,19 @@
 #include <glm.hpp>
 #include <vector>
-#include <MaterialProperties.h>
 #include <memory>
+#include <Ray.h>
 
 /**********************************/
 /***         SceneObject        ***/
 /**********************************/
 
 class SceneObject {
+public:
+    virtual bool intersect(Ray currentRay) = 0;
 
 protected:
     explicit SceneObject(MaterialProperties inMaterial);
 
-private:
     MaterialProperties material;
 };
 
@@ -25,9 +26,13 @@ class Sphere: public SceneObject {
 public:
     Sphere(float inRadius, glm::vec3 inCenterPosition, MaterialProperties material);
 
+    bool intersect(Ray currentRay) override;
+
 private:
     float radius;
     glm::vec3 centerPosition;
+
+    bool static solveQuadratic(const float &a, const float &b, const float &c, float &x0, float &x1);
 };
 
 /**********************************/
@@ -37,6 +42,8 @@ private:
 class VertexObject: public SceneObject {
 public:
     VertexObject(std::vector<glm::vec3>& inVertices, std::vector<glm::ivec3>& inTriangleIndices, MaterialProperties material);
+
+    bool intersect(Ray currentRay) override;
 
     // Factory functions to create specific vertex objects
     static std::shared_ptr<VertexObject> createBox(float height, float width, float depth, glm::mat4x4 transform, MaterialProperties material);
@@ -49,5 +56,3 @@ private:
 
     glm::vec3 calculateTriangleNormal(int index);
 };
-
-
