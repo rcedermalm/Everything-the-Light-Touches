@@ -10,3 +10,10 @@ bool Ray::foundCloserRayIntersection(float newDistanceToOrigin) {
 void Ray::updateRayIntersection(std::shared_ptr<RayIntersection> newRayIntersection) {
     rayIntersection = newRayIntersection;
 }
+
+glm::vec3 Ray::getMaterialColorOfIntersectionPoint() {
+    if(!rayIntersection)
+        return glm::vec3(0,0,0);
+    else
+        return rayIntersection->materialAtIntersection.color;
+}

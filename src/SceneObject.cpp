@@ -1,4 +1,5 @@
 #include "SceneObject.h"
+#include <cmath>
 
 const float EPSILON = 1e-4;
 
@@ -18,10 +19,10 @@ Sphere::Sphere(float inRadius, glm::vec3 inCenterPosition, MaterialProperties ma
 
 ///----------------------------------------------
 
-bool Sphere::intersect(Ray currentRay) {
+bool Sphere::intersect(Ray* currentRay) {
     float a = 1; // Dot product of rays direction with itself
-    glm::vec3 dirRayOriginToCenter = currentRay.getStartPoint() - centerPosition; //L
-    float b = glm::dot((2.f * currentRay.getDirection()), dirRayOriginToCenter);
+    glm::vec3 dirRayOriginToCenter = currentRay->getStartPoint() - centerPosition; //L
+    float b = glm::dot((2.f * currentRay->getDirection()), dirRayOriginToCenter);
     float c = glm::dot(dirRayOriginToCenter, dirRayOriginToCenter) - radius * radius;
 
     float d0, d1;
@@ -38,14 +39,14 @@ bool Sphere::intersect(Ray currentRay) {
         return false;
 
     // We have an intersection
-    if(currentRay.foundCloserRayIntersection(d0)){
-        glm::vec3 intersectionPoint = currentRay.getStartPoint() + d0 * currentRay.getDirection();
+    if(currentRay->foundCloserRayIntersection(d0)){
+        glm::vec3 intersectionPoint = currentRay->getStartPoint() + d0 * currentRay->getDirection();
         glm::vec3 intersectionNormal = intersectionPoint - centerPosition;
 
         std::shared_ptr<RayIntersection> newIntersection = std::make_shared<RayIntersection>(
                 intersectionPoint, intersectionNormal, d0, material);
 
-        currentRay.updateRayIntersection(newIntersection);
+        currentRay->updateRayIntersection(newIntersection);
     }
     return true;
 }
@@ -93,21 +94,20 @@ glm::vec3 VertexObject::calculateTriangleNormal(int index) {
 
 ///----------------------------------------------
 
-std::shared_ptr<VertexObject> VertexObject::createBox(
-        float height, float width, float depth, glm::mat4x4 transform, MaterialProperties material)  {
+std::shared_ptr<VertexObject> VertexObject::createBox(glm::mat4x4 transform, MaterialProperties material)  {
     // Set vertices
     std::vector<glm::vec3> boxVertices;
     boxVertices.reserve(8);
-    boxVertices.emplace_back(-1.0f * width/2.0f, height/2.0f, depth/2.0f);
-    boxVertices.emplace_back(width/2.0f, height/2.0f, depth/2.0f);
-    boxVertices.emplace_back(-1.0f * width/2.0f, -1.0f * height/2.0f, depth/2.0f);
-    boxVertices.emplace_back(width/2.0f, -1.0f * height/2.0f, depth/2.0f);
-    boxVertices.emplace_back(-1.0f * width/2.0f, height/2.0f, -depth/2.0f);
-    boxVertices.emplace_back(width/2.0f, height/2.0f, -1.0f * depth/2.0f);
-    boxVertices.emplace_back(-1.0f * width/2.0f, -1.0f * height/2.0f, -1.0f * depth/2.0f);
-    boxVertices.emplace_back(width/2.0f, -1.0f * height/2.0f, -1.0f * depth/2.0f);
+    boxVertices.emplace_back(-0.5f, 0.5f, 0.5f);
+    boxVertices.emplace_back(0.5f, 0.5f, 0.5f);
+    boxVertices.emplace_back(-0.5f, -0.5f, 0.5f);
+    boxVertices.emplace_back(0.5f, -0.5f, 0.5f);
+    boxVertices.emplace_back(-0.5f, 0.5f, -0.5f);
+    boxVertices.emplace_back(0.5f, 0.5f, -0.5f);
+    boxVertices.emplace_back(-0.5f, -0.5f, -0.5f);
+    boxVertices.emplace_back(0.5f, -0.5f, -0.5f);
 
-    for (auto vertex : boxVertices){
+    for (auto& vertex : boxVertices){
         vertex = glm::vec3(transform * glm::vec4(vertex, 1.0f));
     }
 
@@ -153,6 +153,49 @@ std::shared_ptr<VertexObject> VertexObject::createPlane(
 
 ///----------------------------------------------
 
-bool VertexObject::intersect(Ray currentRay) {
+bool VertexObject::intersectTriangle(Ray* currentRay, int triangleIndex){
+    glm::vec3 edge1 = vertices[triangleIndices[triangleIndex][1]] - vertices[triangleIndices[triangleIndex][0]];
+    glm::vec3 edge2 = vertices[triangleIndices[triangleIndex][2]] - vertices[triangleIndices[triangleIndex][0]];
+
+    glm::vec3 T = currentRay->getStartPoint() - vertices[triangleIndices[triangleIndex][0]];
+    glm::vec3 direction = currentRay->getDirection();
+    glm::vec3 P = glm::cross(direction, edge2);
+    glm::vec3 Q = glm::cross(T, edge1);
+
+    float a = glm::dot(P, edge1);
+
+    // Avoid division by 0
+    if (std::fabs(a) < EPSILON) return false;
+
+    float f = 1.0f / a;
+    float u = glm::dot(P, T) * f;
+    float v = glm::dot(Q, direction) * f;
+
+    if (u + v > 1.0f || u < 0.0f || v < 0.0f) return false;
+
+    float t = glm::dot(Q, edge2) * f;
+
+    if(t > EPSILON && currentRay->foundCloserRayIntersection(t)){
+        // We have an intersection
+        glm::vec3 intersectionPoint = currentRay->getStartPoint() + t * currentRay->getDirection();
+        glm::vec3 intersectionNormal = triangleNormals[triangleIndex];
+
+        std::shared_ptr<RayIntersection> newIntersection = std::make_shared<RayIntersection>(
+                intersectionPoint, intersectionNormal, t, material);
+
+        currentRay->updateRayIntersection(newIntersection);
+        return true;
+    }
+
     return false;
+}
+
+bool VertexObject::intersect(Ray* currentRay) {
+    bool intersection = false;
+    for(size_t triangle = 0; triangle < triangleIndices.size(); ++triangle){
+        if(intersectTriangle(currentRay, triangle) && !intersection)
+            intersection = true;
+    }
+
+    return intersection;
 }

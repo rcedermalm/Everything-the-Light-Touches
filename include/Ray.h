@@ -20,6 +20,8 @@ public:
     glm::vec3 getStartPoint() { return startPoint; }
     glm::vec3 getDirection() { return direction; }
 
+    glm::vec3 getMaterialColorOfIntersectionPoint();
+
     bool foundCloserRayIntersection(float newDistanceToOrigin);
 
     void updateRayIntersection(std::shared_ptr<RayIntersection> newRayIntersection);

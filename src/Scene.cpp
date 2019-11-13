@@ -2,27 +2,27 @@
 
 void Scene::addSphere(float radius, glm::vec3 centerPosition, MaterialProperties material) {
     std::shared_ptr<Sphere> newSphere = std::make_shared<Sphere>(radius, centerPosition, material);
-    sceneObjects.push_back(newSphere.get());
+    sceneObjects.push_back(newSphere);
 }
 
 ///----------------------------------------------
 
-void Scene::addBox(float height, float width, float depth, glm::mat4x4 transform, MaterialProperties material ) {
-    std::shared_ptr<VertexObject> newBox = VertexObject::createBox(height, width, depth, transform, material);
-    sceneObjects.push_back(newBox.get());
+void Scene::addBox(glm::mat4x4 transform, MaterialProperties material ) {
+    std::shared_ptr<VertexObject> newBox = VertexObject::createBox(transform, material);
+    sceneObjects.push_back(newBox);
 }
 
 ///----------------------------------------------
 
 void Scene::addPlane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, MaterialProperties material) {
     std::shared_ptr<VertexObject> newPlane = VertexObject::createPlane(p0, p1, p2, p3, material);
-    sceneObjects.push_back(newPlane.get());
+    sceneObjects.push_back(newPlane);
 }
 
 ///----------------------------------------------
 
-Scene Scene::createDefaultScene() {
-    Scene defaultScene;
+std::shared_ptr<Scene> Scene::createDefaultScene() {
+    std::shared_ptr<Scene> defaultScene = std::make_shared<Scene>();
 
     // Create cornell box
     MaterialProperties diffuseRed(glm::vec3(1.f, 0.f,0.f));
@@ -38,22 +38,36 @@ Scene Scene::createDefaultScene() {
     glm::vec3 p6 = glm::vec3(1.5f, 1.f, 4.f);
     glm::vec3 p7 = glm::vec3(-1.5f, 1.f, 4.f);
 
-    defaultScene.addPlane(p0, p1, p2, p3, diffuseWhite); // Back wall
-    defaultScene.addPlane(p4, p7, p6, p5, diffuseWhite); // Front wall
-    defaultScene.addPlane(p0, p3, p7, p4, diffuseRed); // Left wall
-    defaultScene.addPlane(p1, p5, p6, p2, diffuseGreen); // Right wall
-    defaultScene.addPlane(p2, p6, p7, p3, diffuseWhite); // Roof
-    defaultScene.addPlane(p0, p4, p5, p1, diffuseWhite); // Floor
+    defaultScene->addPlane(p0, p1, p2, p3, diffuseWhite); // Back wall
+    defaultScene->addPlane(p4, p7, p6, p5, diffuseWhite); // Front wall
+    defaultScene->addPlane(p0, p3, p7, p4, diffuseRed); // Left wall
+    defaultScene->addPlane(p1, p5, p6, p2, diffuseGreen); // Right wall
+    defaultScene->addPlane(p2, p6, p7, p3, diffuseWhite); // Roof
+    defaultScene->addPlane(p0, p4, p5, p1, diffuseWhite); // Floor
 
     // Add objects inside cornell box
     MaterialProperties diffuseMagenta(glm::vec3(1.f, 0.f,1.f));
     MaterialProperties diffuseCyan(glm::vec3(0.f, 1.f,1.f));
 
-    defaultScene.addBox(0.3f, 0.3f, 0.3f,
-            glm::translate(glm::mat4(), glm::vec3(0, -0.4, 0.1)), diffuseMagenta);
-    defaultScene.addSphere(0.3f, glm::vec3(0.9f, -0.7f, 0.9f), diffuseCyan);
+    glm::mat4x4 boxTransform = glm::mat4x4(1.0f);
+    boxTransform = glm::translate(boxTransform, glm::vec3(-0.8, -0.3, -0.3));
+    boxTransform = glm::rotate(boxTransform, (float)M_PI / 3, glm::vec3(0, 1, 0));
+    boxTransform = glm::scale(boxTransform, glm::vec3(0.8,1.3,0.8));
+    defaultScene->addBox(boxTransform, diffuseMagenta);
+    defaultScene->addSphere(0.3f, glm::vec3(0.4f, -0.5f, 0.0f), diffuseCyan);
 
     return defaultScene;
 }
+
+bool Scene::findClosestIntersection(Ray* currentRay) {
+    bool intersection = false;
+    for(auto sceneObject : sceneObjects){
+        if(sceneObject->intersect(currentRay) && !intersection)
+            intersection = true;
+    }
+    return intersection;
+}
+
+
 
 

@@ -9,7 +9,7 @@
 
 class SceneObject {
 public:
-    virtual bool intersect(Ray currentRay) = 0;
+    virtual bool intersect(Ray* currentRay) = 0;
 
 protected:
     explicit SceneObject(MaterialProperties inMaterial);
@@ -26,7 +26,7 @@ class Sphere: public SceneObject {
 public:
     Sphere(float inRadius, glm::vec3 inCenterPosition, MaterialProperties material);
 
-    bool intersect(Ray currentRay) override;
+    bool intersect(Ray* currentRay) override;
 
 private:
     float radius;
@@ -43,10 +43,10 @@ class VertexObject: public SceneObject {
 public:
     VertexObject(std::vector<glm::vec3>& inVertices, std::vector<glm::ivec3>& inTriangleIndices, MaterialProperties material);
 
-    bool intersect(Ray currentRay) override;
+    bool intersect(Ray* currentRay) override;
 
     // Factory functions to create specific vertex objects
-    static std::shared_ptr<VertexObject> createBox(float height, float width, float depth, glm::mat4x4 transform, MaterialProperties material);
+    static std::shared_ptr<VertexObject> createBox(glm::mat4x4 transform, MaterialProperties material);
     static std::shared_ptr<VertexObject> createPlane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, MaterialProperties material);
 
 private:
@@ -55,4 +55,7 @@ private:
     std::vector<glm::vec3> triangleNormals;
 
     glm::vec3 calculateTriangleNormal(int index);
+
+    // Finding intersection point on a triangle using The Möller–Trumbore ray-triangle intersection algorithm
+    bool intersectTriangle(Ray* currentRay, int triangleIndex);
 };
