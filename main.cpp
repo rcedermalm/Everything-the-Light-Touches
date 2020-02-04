@@ -1,5 +1,9 @@
 #include <iostream>
+#include <Scene.h>
 #include <Camera.h>
+
+using rayTracer::Camera;
+using rayTracer::Scene;
 
 int main() {
     std::cout << "~ Everything the light touches ~" << std::endl;
@@ -9,7 +13,7 @@ int main() {
                   glm::vec3(0, 0, 0), // Center (position to look at)
                   glm::vec3(0, 1, 0), // Up vector
                   M_PI / 3.5, // Field of view in radians
-                  ImageResolution::RESOLUTION_720p);
+                  Camera::ImageResolution::RESOLUTION_720p);
 
     // Create scene and add it to the camera
     std::shared_ptr<Scene> scene = Scene::createDefaultScene();

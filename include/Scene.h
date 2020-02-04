@@ -1,8 +1,14 @@
+#pragma once
 #include <glm.hpp>
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include "SceneObject.h"
+namespace rayTracer {
+
+class MaterialProperties;
+using MaterialPtr = std::shared_ptr<MaterialProperties>;
+class SceneObject;
+class Ray;
 
 class Scene {
 public:
@@ -15,12 +21,14 @@ public:
     /// ---------------------------------------------------------------------
     /// Functions to add objects to scene
 
-    void addSphere(float radius, glm::vec3 centerPosition, MaterialProperties material);
+    void addSphere(float radius, glm::vec3 centerPosition, MaterialPtr material);
 
-    void addBox(glm::mat4x4 transform, MaterialProperties material );
+    void addBox(glm::mat4x4 transform, MaterialPtr material );
 
-    void addPlane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, MaterialProperties material);
+    void addPlane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, MaterialPtr material);
 
 private:
     std::vector<std::shared_ptr<SceneObject>> sceneObjects;
 };
+
+} // namespace rayTracer

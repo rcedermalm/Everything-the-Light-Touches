@@ -1,5 +1,24 @@
+#include <Camera.h>
+#include <Ray.h>
+#include <Scene.h>
+#include <chrono>
 #include <iostream>
-#include "Camera.h"
+
+namespace rayTracer {
+
+namespace{
+
+void displayTimeTaken(int timeInMilliSeconds){
+    int timeInMinutes = (timeInMilliSeconds/1000)/60;
+    float restSeconds = (float(timeInMilliSeconds)/1000.0f) - float(timeInMinutes) * 60;
+
+    std::cout << "Time taken: ";
+    if(timeInMinutes > 0)
+        std::cout << timeInMinutes << "min and ";
+    std::cout << restSeconds << "s " << std::endl;
+}
+
+} // namespace
 
 Camera::Camera(glm::vec3 eye,
                glm::vec3 center,
@@ -45,7 +64,11 @@ void Camera::renderImage() {
         return;
     }
 
+    // For calculating time taken
+    auto startTime = std::chrono::high_resolution_clock::now();
+
     // Calculate the pixel values by sending out rays into the scene
+#pragma omp parallel for
     for (int i = 0; i < pixelHeight; i++) {
         for (int j = 0; j < pixelWidth; j++) {
             Ray newRay = castRay(j,pixelHeight - i - 1, 0,0);
@@ -55,6 +78,10 @@ void Camera::renderImage() {
 
     // Generate the image from the pixel values
     generateImage();
+
+    // Calculate time taken
+    auto endTime = std::chrono::high_resolution_clock::now();
+    displayTimeTaken(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count());
 }
 
 ///----------------------------------------------
@@ -74,10 +101,14 @@ void Camera::generateImage() {
     fclose(f);
 }
 
+///----------------------------------------------
+
 void Camera::setScene(std::shared_ptr<Scene> scene) {
     if (scene != nullptr)
         sceneToRender = scene;
 }
+
+///----------------------------------------------
 
 Ray Camera::castRay(int pixelX, int pixelY, float randomnessX, float randomnessY) {
     glm::vec4 from4 = VP_inv *
@@ -97,10 +128,12 @@ Ray Camera::castRay(int pixelX, int pixelY, float randomnessX, float randomnessY
     return Ray(eye, direction);
 }
 
+///----------------------------------------------
+
 glm::vec3 Camera::traceRay(Ray* ray) {
     sceneToRender->findClosestIntersection(ray);
     return ray->getMaterialColorOfIntersectionPoint();
 }
 
-
+} // namespace rayTracer
 

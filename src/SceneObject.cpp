@@ -1,5 +1,8 @@
-#include "SceneObject.h"
+#include <SceneObject.h>
+#include <Ray.h>
 #include <cmath>
+
+namespace rayTracer {
 
 const float EPSILON = 1e-4;
 
@@ -7,14 +10,14 @@ const float EPSILON = 1e-4;
 /***         SceneObject        ***/
 /**********************************/
 
-SceneObject::SceneObject(MaterialProperties inMaterial)
+SceneObject::SceneObject(MaterialPtr inMaterial)
 : material(inMaterial) {}
 
 /**********************************/
 /***     SceneObject Sphere     ***/
 /**********************************/
 
-Sphere::Sphere(float inRadius, glm::vec3 inCenterPosition, MaterialProperties material)
+Sphere::Sphere(float inRadius, glm::vec3 inCenterPosition, MaterialPtr material)
 : SceneObject(material), radius(inRadius), centerPosition(inCenterPosition) {}
 
 ///----------------------------------------------
@@ -74,7 +77,7 @@ bool Sphere::solveQuadratic(const float &a, const float &b, const float &c, floa
 /**********************************/
 
 VertexObject::VertexObject( std::vector<glm::vec3>& inVertices, std::vector<glm::ivec3>& inTriangleIndices,
-                            MaterialProperties material) : SceneObject(material){
+                            MaterialPtr material) : SceneObject(material){
     vertices = inVertices;
     triangleIndices = inTriangleIndices;
 
@@ -94,7 +97,7 @@ glm::vec3 VertexObject::calculateTriangleNormal(int index) {
 
 ///----------------------------------------------
 
-std::shared_ptr<VertexObject> VertexObject::createBox(glm::mat4x4 transform, MaterialProperties material)  {
+std::shared_ptr<VertexObject> VertexObject::createBox(glm::mat4x4 transform, MaterialPtr material)  {
     // Set vertices
     std::vector<glm::vec3> boxVertices;
     boxVertices.reserve(8);
@@ -133,7 +136,7 @@ std::shared_ptr<VertexObject> VertexObject::createBox(glm::mat4x4 transform, Mat
 ///----------------------------------------------
 
 std::shared_ptr<VertexObject> VertexObject::createPlane(
-        glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, MaterialProperties material) {
+        glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, MaterialPtr material) {
     // Set vertices
     std::vector<glm::vec3> planeVertices;
     planeVertices.reserve(4);
@@ -199,3 +202,5 @@ bool VertexObject::intersect(Ray* currentRay) {
 
     return intersection;
 }
+
+} // namespace rayTracer

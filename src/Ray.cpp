@@ -1,4 +1,7 @@
-#include "Ray.h"
+#include <Ray.h>
+#include <MaterialProperties.h>
+
+namespace rayTracer {
 
 Ray::Ray(glm::vec3 inStartPoint, glm::vec3 inDirection)
 : startPoint(inStartPoint), direction(glm::normalize(inDirection)), rayIntersection(nullptr) {}
@@ -15,5 +18,7 @@ glm::vec3 Ray::getMaterialColorOfIntersectionPoint() {
     if(!rayIntersection)
         return glm::vec3(0,0,0);
     else
-        return rayIntersection->materialAtIntersection.color;
+        return rayIntersection->materialAtIntersection->color;
 }
+
+} // namespace rayTracer

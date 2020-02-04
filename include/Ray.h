@@ -1,16 +1,21 @@
+#pragma once
 #include <glm.hpp>
-#include <MaterialProperties.h>
 #include <memory>
+
+namespace rayTracer {
+
+class MaterialProperties;
+using MaterialPtr = std::shared_ptr<MaterialProperties>;
 
 class RayIntersection {
 public:
-    RayIntersection(glm::vec3 point, glm::vec3 normal, float distance, MaterialProperties material)
+    RayIntersection(glm::vec3 point, glm::vec3 normal, float distance, MaterialPtr material)
     : distanceToRayOrigin(distance), intersectionPoint(point), normalAtIntersection(normal), materialAtIntersection(material) {}
 
     float distanceToRayOrigin;
     glm::vec3 intersectionPoint;
     glm::vec3 normalAtIntersection;
-    MaterialProperties materialAtIntersection;
+    MaterialPtr materialAtIntersection;
 };
 
 class Ray {
@@ -33,4 +38,4 @@ private:
     std::shared_ptr<RayIntersection> rayIntersection;
 };
 
-
+} // namespace rayTracer

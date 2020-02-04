@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.9)
 project(Everything_the_Light_Touches)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -14,6 +14,11 @@ set(PROJECT_SOURCES_DIR ${PROJECT_SOURCE_DIR}/src)
 
 ### GLM ###
 set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_EXTERNAL_DIR}/glm)
+
+find_package(OpenMP)
+if(OpenMP_CXX_FOUND)
+    set(ALL_LIBRARIES ${ALL_LIBRARIES} OpenMP::OpenMP_CXX)
+endif()
 
 ####################################################
 ###### Include directories, add executables ########

@@ -1,18 +1,22 @@
-#include <vector>
+#pragma once
 #include <fstream>
 #include <glm.hpp>
+#include <memory>
+#include <vector>
 
-#include "Scene.h"
+namespace rayTracer {
 
-enum class ImageResolution {
-    RESOLUTION_480p,
-    RESOLUTION_720p,
-    RESOLUTION_1080p
-};
+class Ray;
+class Scene;
 
 class Camera {
-
 public:
+    enum class ImageResolution {
+        RESOLUTION_480p,
+        RESOLUTION_720p,
+        RESOLUTION_1080p
+    };
+
     explicit Camera(glm::vec3 eye,
                     glm::vec3 center,
                     glm::vec3 up,
@@ -37,3 +41,5 @@ private:
 
     void generateImage();
 };
+
+} // namespace rayTracer

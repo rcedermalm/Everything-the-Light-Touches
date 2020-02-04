@@ -1,3 +1,7 @@
+#pragma once
+#include <memory>
+
+namespace rayTracer {
 
 class MaterialProperties {
 
@@ -6,3 +10,7 @@ public:
 
     glm::vec3 color;
 };
+
+using MaterialPtr = std::shared_ptr<MaterialProperties>;
+
+} // namespace rayTracer

@@ -1,61 +1,73 @@
+#pragma once
 #include <glm.hpp>
-#include <vector>
 #include <memory>
-#include <Ray.h>
+#include <vector>
+
+namespace rayTracer {
+
+    class MaterialProperties;
+    using MaterialPtr = std::shared_ptr<MaterialProperties>;
+    class Ray;
 
 /**********************************/
 /***         SceneObject        ***/
 /**********************************/
 
-class SceneObject {
-public:
-    virtual bool intersect(Ray* currentRay) = 0;
+    class SceneObject {
+    public:
+        virtual bool intersect(Ray *currentRay) = 0;
 
-protected:
-    explicit SceneObject(MaterialProperties inMaterial);
+    protected:
+        explicit SceneObject(MaterialPtr inMaterial);
 
-    MaterialProperties material;
-};
+        MaterialPtr material;
+    };
 
 /**********************************/
 /***     SceneObject Sphere     ***/
 /**********************************/
 
-class Sphere: public SceneObject {
+    class Sphere : public SceneObject {
 
-public:
-    Sphere(float inRadius, glm::vec3 inCenterPosition, MaterialProperties material);
+    public:
+        Sphere(float inRadius, glm::vec3 inCenterPosition, MaterialPtr material);
 
-    bool intersect(Ray* currentRay) override;
+        bool intersect(Ray *currentRay) override;
 
-private:
-    float radius;
-    glm::vec3 centerPosition;
+    private:
+        float radius;
+        glm::vec3 centerPosition;
 
-    bool static solveQuadratic(const float &a, const float &b, const float &c, float &x0, float &x1);
-};
+        bool static solveQuadratic(const float &a, const float &b, const float &c, float &x0, float &x1);
+    };
 
 /**********************************/
 /***  SceneObject VertexObject  ***/
 /**********************************/
 
-class VertexObject: public SceneObject {
-public:
-    VertexObject(std::vector<glm::vec3>& inVertices, std::vector<glm::ivec3>& inTriangleIndices, MaterialProperties material);
+    class VertexObject : public SceneObject {
+    public:
+        VertexObject(std::vector<glm::vec3> &inVertices, std::vector<glm::ivec3> &inTriangleIndices,
+                     MaterialPtr material);
 
-    bool intersect(Ray* currentRay) override;
+        bool intersect(Ray *currentRay) override;
 
-    // Factory functions to create specific vertex objects
-    static std::shared_ptr<VertexObject> createBox(glm::mat4x4 transform, MaterialProperties material);
-    static std::shared_ptr<VertexObject> createPlane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, MaterialProperties material);
+        // Factory functions to create specific vertex objects
+        static std::shared_ptr<VertexObject>
+        createBox(glm::mat4x4 transform, MaterialPtr material);
 
-private:
-    std::vector<glm::vec3> vertices;
-    std::vector<glm::ivec3> triangleIndices;
-    std::vector<glm::vec3> triangleNormals;
+        static std::shared_ptr<VertexObject> createPlane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3,
+                                                         MaterialPtr material);
 
-    glm::vec3 calculateTriangleNormal(int index);
+    private:
+        std::vector<glm::vec3> vertices;
+        std::vector<glm::ivec3> triangleIndices;
+        std::vector<glm::vec3> triangleNormals;
 
-    // Finding intersection point on a triangle using The Möller–Trumbore ray-triangle intersection algorithm
-    bool intersectTriangle(Ray* currentRay, int triangleIndex);
-};
+        glm::vec3 calculateTriangleNormal(int index);
+
+        // Finding intersection point on a triangle using The Möller–Trumbore ray-triangle intersection algorithm
+        bool intersectTriangle(Ray *currentRay, int triangleIndex);
+    };
+
+} // namespace rayTracer

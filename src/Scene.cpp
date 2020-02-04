@@ -1,20 +1,25 @@
-#include "Scene.h"
+#include <Scene.h>
+#include <SceneObject.h>
+#include <MaterialProperties.h>
+#include <Ray.h>
 
-void Scene::addSphere(float radius, glm::vec3 centerPosition, MaterialProperties material) {
+namespace rayTracer {
+
+void Scene::addSphere(float radius, glm::vec3 centerPosition, MaterialPtr material) {
     std::shared_ptr<Sphere> newSphere = std::make_shared<Sphere>(radius, centerPosition, material);
     sceneObjects.push_back(newSphere);
 }
 
 ///----------------------------------------------
 
-void Scene::addBox(glm::mat4x4 transform, MaterialProperties material ) {
+void Scene::addBox(glm::mat4x4 transform, MaterialPtr material ) {
     std::shared_ptr<VertexObject> newBox = VertexObject::createBox(transform, material);
     sceneObjects.push_back(newBox);
 }
 
 ///----------------------------------------------
 
-void Scene::addPlane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, MaterialProperties material) {
+void Scene::addPlane(glm::vec3 p0, glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, MaterialPtr material) {
     std::shared_ptr<VertexObject> newPlane = VertexObject::createPlane(p0, p1, p2, p3, material);
     sceneObjects.push_back(newPlane);
 }
@@ -25,9 +30,9 @@ std::shared_ptr<Scene> Scene::createDefaultScene() {
     std::shared_ptr<Scene> defaultScene = std::make_shared<Scene>();
 
     // Create cornell box
-    MaterialProperties diffuseRed(glm::vec3(1.f, 0.f,0.f));
-    MaterialProperties diffuseWhite(glm::vec3(1.f, 1.f,1.f));
-    MaterialProperties diffuseGreen(glm::vec3(0.f, 1.f,0.f));
+    MaterialPtr diffuseRed = std::make_shared<MaterialProperties>(glm::vec3(1.f, 0.f,0.f));
+    MaterialPtr diffuseWhite = std::make_shared<MaterialProperties>(glm::vec3(1.f, 1.f,1.f));
+    MaterialPtr diffuseGreen = std::make_shared<MaterialProperties>(glm::vec3(0.f, 1.f,0.f));
 
     glm::vec3 p0 = glm::vec3(-1.5f, -1.f, -1.f);
     glm::vec3 p1 = glm::vec3(1.5f, -1.f, -1.f);
@@ -46,8 +51,8 @@ std::shared_ptr<Scene> Scene::createDefaultScene() {
     defaultScene->addPlane(p0, p4, p5, p1, diffuseWhite); // Floor
 
     // Add objects inside cornell box
-    MaterialProperties diffuseMagenta(glm::vec3(1.f, 0.f,1.f));
-    MaterialProperties diffuseCyan(glm::vec3(0.f, 1.f,1.f));
+    MaterialPtr diffuseMagenta = std::make_shared<MaterialProperties>(glm::vec3(1.f, 0.f,1.f));
+    MaterialPtr diffuseCyan = std::make_shared<MaterialProperties>(glm::vec3(0.f, 1.f,1.f));
 
     glm::mat4x4 boxTransform = glm::mat4x4(1.0f);
     boxTransform = glm::translate(boxTransform, glm::vec3(-0.8, -0.3, -0.3));
@@ -61,13 +66,13 @@ std::shared_ptr<Scene> Scene::createDefaultScene() {
 
 bool Scene::findClosestIntersection(Ray* currentRay) {
     bool intersection = false;
-    for(auto sceneObject : sceneObjects){
+    for(auto& sceneObject : sceneObjects){
         if(sceneObject->intersect(currentRay) && !intersection)
             intersection = true;
     }
     return intersection;
 }
 
-
+} // namespace rayTracer
 
 
