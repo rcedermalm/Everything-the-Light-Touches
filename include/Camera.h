@@ -23,8 +23,10 @@ public:
                     float fov,
                     ImageResolution imageResolution);
 
+    /// Sets the scene that should be rendered.
     void setScene(std::shared_ptr<Scene> scene);
 
+    /// Renders the image by sending out multiple rays per pixel into the scene.
     void renderImage();
 
 private:
@@ -36,9 +38,12 @@ private:
 
     std::shared_ptr<Scene> sceneToRender;
 
-    Ray castRay(int pixelX, int pixelY, float randomnessX, float randomnessY);
-    glm::vec3 traceRay(Ray* ray);
+    static const int numSubSamples = 1;
 
+    /// Creates a ray shooting out from pixel x and y. Possible to add some randomness [-0.5, 0.5] to it
+    std::shared_ptr<Ray> castRay(int pixelX, int pixelY, float randomnessX, float randomnessY);
+
+    /// Generates a .ppm image using the pixel values stored in 'pixels'
     void generateImage();
 };
 

@@ -1,6 +1,7 @@
 #include <iostream>
 #include <Scene.h>
 #include <Camera.h>
+#include <omp.h>
 
 using rayTracer::Camera;
 using rayTracer::Scene;
@@ -19,8 +20,18 @@ int main() {
     std::shared_ptr<Scene> scene = Scene::createDefaultScene();
     camera.setScene(scene);
 
+#pragma omp parallel
+    {
+        int numThreads = omp_get_num_threads();
+        std::cout << numThreads;
+#pragma omp for
+        for(int i = 0; i < 100; ++i)
+            std::cout << "hej + " << i << std::endl;
+    }
+
+
     // Render scene through the camera
-    camera.renderImage();
+    //camera.renderImage();
 
     return 0;
 }
