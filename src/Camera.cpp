@@ -114,13 +114,21 @@ namespace rayTracer {
 
         // Calculate time taken
         auto endTime = std::chrono::high_resolution_clock::now();
-        displayTimeTaken(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count());
+        displayTimeTaken(int(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()));
     }
 
     ///----------------------------------------------
 
     void Camera::generateImage() {
-        FILE *f = fopen("../renderedImage.ppm", "wb");
+        FILE* f;
+        fopen_s(&f, "../renderedImage.ppm", "wb");
+        
+        if (!f)
+        {
+            std::cout << "Can't open file, closing down.." << std::endl;
+            return;
+        }
+
         fprintf(f, "P6\n%i %i 255\n", pixelWidth, pixelHeight);
 
         for (int i = 0; i < pixelHeight; i++) {

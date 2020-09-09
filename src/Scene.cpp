@@ -24,7 +24,7 @@ namespace rayTracer {
         std::shared_ptr<Sphere> newSphere = std::make_shared<Sphere>(radius, centerPosition, material);
         sceneObjects.push_back(newSphere);
         if (emissive)
-            emissiveObjectIndices.push_back(sceneObjects.size() - 1);
+            emissiveObjectIndices.push_back(int(sceneObjects.size()) - 1);
     }
 
     ///----------------------------------------------
@@ -33,7 +33,7 @@ namespace rayTracer {
         std::shared_ptr<VertexObject> newBox = VertexObject::createBox(transform, material);
         sceneObjects.push_back(newBox);
         if (emissive)
-            emissiveObjectIndices.push_back(sceneObjects.size() - 1);
+            emissiveObjectIndices.push_back(int(sceneObjects.size()) - 1);
     }
 
     ///----------------------------------------------
@@ -42,7 +42,7 @@ namespace rayTracer {
         std::shared_ptr<VertexObject> newPlane = VertexObject::createPlane(p0, p1, p2, p3, material);
         sceneObjects.push_back(newPlane);
         if (emissive)
-            emissiveObjectIndices.push_back(sceneObjects.size() - 1);
+            emissiveObjectIndices.push_back(int(sceneObjects.size()) - 1);
     }
 
     ///----------------------------------------------
@@ -77,13 +77,13 @@ namespace rayTracer {
 
         glm::mat4x4 boxTransform = glm::mat4x4(1.0f);
         boxTransform = glm::translate(boxTransform, glm::vec3(-0.8, -0.3, -0.3));
-        boxTransform = glm::rotate(boxTransform, (float)M_PI / 3, glm::vec3(0, 1, 0));
+        boxTransform = glm::rotate(boxTransform, glm::pi<float>() / 3, glm::vec3(0, 1, 0));
         boxTransform = glm::scale(boxTransform, glm::vec3(0.8,1.3,0.8));
         defaultScene->addBox(boxTransform, diffuseMagenta);
         defaultScene->addSphere(0.3f, glm::vec3(0.4f, -0.5f, 0.0f), diffuseCyan);
 
         // Add a light source
-        MaterialPtr emissiveWhite = std::make_shared<EmissiveMaterial>(glm::vec3(1.f, 1.f,1.f), 30);
+        MaterialPtr emissiveWhite = std::make_shared<EmissiveMaterial>(glm::vec3(1.f, 1.f, 1.f), 30.f);
         glm::vec3 lightP1 = glm::vec3(0.35f, 0.99f, -0.35f);
         glm::vec3 lightP2 = glm::vec3(-0.35f, 0.99f, -0.35f);
         glm::vec3 lightP3 = glm::vec3(0.35f, 0.99f, 0.35f);

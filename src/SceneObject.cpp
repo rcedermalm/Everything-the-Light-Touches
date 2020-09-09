@@ -5,7 +5,7 @@
 
 namespace rayTracer {
 
-    const float EPSILON = 1e-6;
+    const float EPSILON = 1e-6f;
 
     /**********************************/
     /***         SceneObject        ***/
@@ -121,7 +121,7 @@ namespace rayTracer {
     {
         // Set triangle normals
         triangleNormals.reserve(triangleIndices.size());
-        for (size_t triangle = 0; triangle < triangleIndices.size(); ++triangle)
+        for (int triangle = 0; triangle < triangleIndices.size(); ++triangle)
             triangleNormals.push_back(calculateTriangleNormal(triangle));
 
         calculateArea();
@@ -241,7 +241,7 @@ namespace rayTracer {
     bool VertexObject::intersect(std::shared_ptr<Ray> currentRay)
     {
         bool intersection = false;
-        for(size_t triangle = 0; triangle < triangleIndices.size(); ++triangle){
+        for(int triangle = 0; triangle < triangleIndices.size(); ++triangle){
             if(intersectTriangle(currentRay, triangle) && !intersection)
                 intersection = true;
         }
