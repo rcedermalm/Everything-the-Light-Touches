@@ -18,6 +18,8 @@ namespace rayTracer {
     {
     }
 
+    ///----------------------------------------------
+
     void SceneObject::calculateRadiance()
     {
         if (auto emissiveMaterial = std::dynamic_pointer_cast<EmissiveMaterial>(material))
@@ -237,6 +239,8 @@ namespace rayTracer {
 
         return false;
     }
+
+    ///----------------------------------------------
 
     bool VertexObject::intersect(std::shared_ptr<Ray> currentRay)
     {

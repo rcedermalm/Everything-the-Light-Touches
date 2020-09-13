@@ -1,35 +1,16 @@
 #include <Camera.h>
 #include <Ray.h>
-#include <Scene.h>
-#include <chrono>
 #include <iostream>
-#include <iomanip>
-#include <random>
 
 namespace rayTracer {
-
-    namespace {
-
-        void displayTimeTaken(int timeInMilliSeconds){
-            int timeInMinutes = (timeInMilliSeconds/1000)/60;
-            float restSeconds = (float(timeInMilliSeconds)/1000.0f) - float(timeInMinutes) * 60;
-
-            std::cout << "Time taken: ";
-            if(timeInMinutes > 0)
-                std::cout << timeInMinutes << "min and ";
-            std::cout << restSeconds << "s " << std::endl;
-        }
-
-    } // anonymous namespace
-
-    ///----------------------------------------------
 
     Camera::Camera(glm::vec3 eye,
                    glm::vec3 center,
                    glm::vec3 up,
                    float fov,
-                   ImageResolution imageResolution)
-                   : eye (eye), center(center), up(up), fov(fov)
+                   ImageResolution imageResolution,
+                   std::string name)
+                   : name(name), eye (eye), center(center), up(up), fov(fov)
     {
         switch(imageResolution){
             case ImageResolution::RESOLUTION_480p:
@@ -63,58 +44,33 @@ namespace rayTracer {
 
     ///----------------------------------------------
 
-    void Camera::renderImage() {
-        if (!sceneToRender) {
-            std::cout << "There is no scene to render" << std::endl;
+    std::shared_ptr<Ray> Camera::createCameraRay(int pixelX, int pixelY, float randomnessX, float randomnessY)
+    {
+        glm::vec4 from4 = VP_inv *
+            glm::vec4((((float)pixelX + randomnessX) / (float)pixelWidth - 0.5) * 2,
+                (((float)pixelY + randomnessY) / (float)pixelHeight - 0.5) * 2,
+                1, 1);
+
+        glm::vec4 to4 = VP_inv *
+            glm::vec4((((float)pixelX + randomnessX) / (float)pixelWidth - 0.5) * 2,
+                (((float)pixelY + randomnessY) / (float)pixelHeight - 0.5) * 2,
+                -1, 1);
+
+        glm::vec3 from = glm::vec3(from4) * from4.w;
+        glm::vec3 to = glm::vec3(to4) * to4.w;
+
+        glm::vec3 direction = glm::normalize(to - from);
+        return std::make_shared<Ray>(eye, direction);
+    }
+
+    ///----------------------------------------------
+
+    void Camera::setPixelValue(int x, int y, glm::vec3 pixelValue)
+    {
+        if (x < 0 || x >= pixelHeight || y < 0 || y >= pixelWidth)
             return;
-        }
 
-        // For randomness in the ray generation
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_real_distribution<float> dis(-0.5, 0.5);
-
-        // For calculating time taken
-        auto startTime = std::chrono::high_resolution_clock::now();
-
-        // Calculate the pixel values by sending out rays into the scene
-        int lastPercentageOutputted = -1;
-        for (int i = 0; i < pixelHeight; i++)
-        {
-    #pragma omp parallel for
-            for (int j = 0; j < pixelWidth; j++) {
-                glm::vec3 finalColor = glm::vec3(0.0f);
-                for (int subSample = 0; subSample < numSubSamples; ++subSample)
-                {
-                    std::shared_ptr<Ray> newRay = castRay(j, pixelHeight - i - 1, dis(gen), dis(gen));
-                    finalColor += sceneToRender->traceRayThroughScene(newRay);
-                }
-                pixels[i][j] = finalColor / float(numSubSamples);
-            }
-
-            // Print out progress every x% done
-            int printEveryXpercent = 2;
-            int percentageDone = int(float(i+1) / float(pixelHeight) * 100);
-            if (percentageDone % printEveryXpercent == 0 && percentageDone != lastPercentageOutputted)
-            {
-                std::cout << "[" << std::setw(3) << percentageDone << "%] ";
-                lastPercentageOutputted = percentageDone;
-                if (percentageDone == 0)
-                    std::cout << "Starting off";
-                else if (percentageDone == 50)
-                    std::cout << "Halfway there!";
-                else if (percentageDone == 100)
-                    std::cout << "Done!";
-                std::cout << std::endl;
-            }
-        }
-
-        // Generate the image from the pixel values
-        generateImage();
-
-        // Calculate time taken
-        auto endTime = std::chrono::high_resolution_clock::now();
-        displayTimeTaken(int(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()));
+        pixels[x][y] = pixelValue;
     }
 
     ///----------------------------------------------
@@ -144,29 +100,23 @@ namespace rayTracer {
 
     ///----------------------------------------------
 
-    void Camera::setScene(std::shared_ptr<Scene> scene) {
-        if (scene != nullptr)
-            sceneToRender = scene;
+    int Camera::getPixelHeight() const
+    {
+        return pixelHeight;
     }
 
     ///----------------------------------------------
 
-    std::shared_ptr<Ray> Camera::castRay(int pixelX, int pixelY, float randomnessX, float randomnessY) {
-        glm::vec4 from4 = VP_inv *
-                glm::vec4((((float)pixelX + randomnessX) / (float)pixelWidth - 0.5) * 2,
-                        (((float)pixelY + randomnessY) / (float)pixelHeight - 0.5) * 2,
-                        1, 1 );
+    int Camera::getPixelWidth() const
+    {
+        return pixelWidth;
+    }
 
-        glm::vec4 to4 = VP_inv *
-                glm::vec4((((float)pixelX + randomnessX) / (float)pixelWidth - 0.5) * 2,
-                        (((float)pixelY + randomnessY) / (float)pixelHeight - 0.5) * 2,
-                        -1, 1 );
+    ///----------------------------------------------
 
-        glm::vec3 from = glm::vec3(from4) * from4.w;
-        glm::vec3 to = glm::vec3(to4) * to4.w;
-
-        glm::vec3 direction = glm::normalize(to - from);
-        return std::make_shared<Ray>(eye, direction);
+    std::string Camera::getName() const
+    {
+        return name;
     }
 
 } // namespace rayTracer

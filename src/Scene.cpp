@@ -2,22 +2,106 @@
 #include <SceneObject.h>
 #include <MaterialProperties.h>
 #include <Ray.h>
+#include <chrono>
 #include <gtx/string_cast.hpp>
 #include <iostream>
+#include <iomanip>
 
 namespace rayTracer {
 
+    namespace {
+
+        void displayTimeTaken(int timeInMilliSeconds) {
+            int timeInMinutes = (timeInMilliSeconds / 1000) / 60;
+            float restSeconds = (float(timeInMilliSeconds) / 1000.0f) - float(timeInMinutes) * 60;
+
+            std::cout << "Time taken: ";
+            if (timeInMinutes > 0)
+                std::cout << timeInMinutes << "min and ";
+            std::cout << restSeconds << "s " << std::endl;
+        }
+
+    } // anonymous namespace
+
     Scene::Scene()
+        : renderSettings(RenderSettings())
     {
         std::random_device rd;
         gen = new std::mt19937(rd());
         dis = new std::uniform_real_distribution<float>(0, 1);
     }
 
+    ///----------------------------------------------
+
     Scene::~Scene()
     {
         delete gen;
         delete dis;
+    }
+
+    ///----------------------------------------------
+
+    void Scene::render(const std::string cameraName, const RenderSettings& settings)
+    {
+        if (sceneCameras.find(cameraName) == sceneCameras.end())
+        {
+            std::cout << "The given camera name '" << cameraName << "' does not exist. Exiting.." << std::endl;
+            return;
+        }
+            
+        std::shared_ptr<Camera> camera = sceneCameras.at(cameraName);
+        int pixelWidth = camera->getPixelWidth();
+        int pixelHeight = camera->getPixelHeight();
+
+        renderSettings = settings;
+
+        // For randomness in the ray generation
+        std::random_device rd;
+        std::mt19937 genHalf(rd());
+        std::uniform_real_distribution<float> disHalf(-0.5, 0.5);
+
+        // For calculating time taken
+        auto startTime = std::chrono::high_resolution_clock::now();
+
+        // Calculate the pixel values by sending out rays into the scene
+        int lastPercentageOutputted = -1;
+        for (int i = 0; i < pixelHeight; i++)
+        {
+#pragma omp parallel for
+            for (int j = 0; j < pixelWidth; j++) {
+                glm::vec3 finalColor = glm::vec3(0.0f);
+                for (int subSample = 0; subSample < renderSettings.numSubSamplesPerPixel; ++subSample)
+                {
+                    std::shared_ptr<Ray> newRay = camera->createCameraRay(j, pixelHeight - i - 1, disHalf(genHalf), disHalf(genHalf));
+                    finalColor += traceRay(newRay);
+                }
+
+                camera->setPixelValue(i, j, finalColor / float(renderSettings.numSubSamplesPerPixel));
+            }
+
+            // Print out progress every x% done
+            int percentageDone = int(float(i + 1) / float(pixelHeight) * 100);
+            if (percentageDone % renderSettings.outputProgressEveryXPercent == 0 
+                && percentageDone != lastPercentageOutputted)
+            {
+                std::cout << "[" << std::setw(3) << percentageDone << "%] ";
+                lastPercentageOutputted = percentageDone;
+                if (percentageDone == 0)
+                    std::cout << "Starting off";
+                else if (percentageDone == 50)
+                    std::cout << "Halfway there!";
+                else if (percentageDone == 100)
+                    std::cout << "Done!";
+                std::cout << std::endl;
+            }
+        }
+
+        // Generate the image from the pixel values
+        camera->generateImage();
+
+        // Calculate time taken
+        auto endTime = std::chrono::high_resolution_clock::now();
+        displayTimeTaken(int(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()));
     }
 
     void Scene::addSphere(float radius, glm::vec3 centerPosition, MaterialPtr material, bool emissive) {
@@ -43,6 +127,13 @@ namespace rayTracer {
         sceneObjects.push_back(newPlane);
         if (emissive)
             emissiveObjectIndices.push_back(int(sceneObjects.size()) - 1);
+    }
+
+    ///----------------------------------------------
+
+    void Scene::addCamera(std::shared_ptr<Camera> camera)
+    {
+        sceneCameras[camera->getName()] = camera;
     }
 
     ///----------------------------------------------
@@ -80,7 +171,9 @@ namespace rayTracer {
         boxTransform = glm::rotate(boxTransform, glm::pi<float>() / 3, glm::vec3(0, 1, 0));
         boxTransform = glm::scale(boxTransform, glm::vec3(0.8,1.3,0.8));
         defaultScene->addBox(boxTransform, diffuseMagenta);
-        defaultScene->addSphere(0.3f, glm::vec3(0.4f, -0.5f, 0.0f), diffuseCyan);
+
+        MaterialPtr mirror = std::make_shared<PerfectMirrorMaterial>();
+        defaultScene->addSphere(0.3f, glm::vec3(0.4f, -0.5f, 0.0f), mirror);
 
         // Add a light source
         MaterialPtr emissiveWhite = std::make_shared<EmissiveMaterial>(glm::vec3(1.f, 1.f, 1.f), 30.f);
@@ -95,15 +188,7 @@ namespace rayTracer {
 
     ///----------------------------------------------
 
-    glm::vec3 Scene::traceRayThroughScene(std::shared_ptr<Ray> ray) const
-    {
-        // Call recursive ray tracing function
-        return traceRay(ray, 0);
-    }
-
-    ///----------------------------------------------
-
-    glm::vec3 Scene::traceRay(std::shared_ptr<Ray> ray, const int depth) const
+    glm::vec3 Scene::traceRay(std::shared_ptr<Ray> ray) const
     {
         // Something's gone wrong, we can't find any intersections within the scene..
         if (!findClosestIntersection(ray))
@@ -120,8 +205,8 @@ namespace rayTracer {
         float randomNum = (*dis)(*gen);
         if (ray->hitsEmissiveObject())
             indirectLight = ray->getValueOfBRDF(reflectedRay);
-        else if (!ray->hitsDiffuseObject() || randomNum < 0.9f)
-            indirectLight += traceRay(reflectedRay, depth + 1) * ray->getValueOfBRDF(reflectedRay);;
+        else if (!ray->hitsDiffuseObject() || randomNum < renderSettings.russianRouletteCoefficient)
+            indirectLight += traceRay(reflectedRay) * ray->getValueOfBRDF(reflectedRay);;
 
         // Calculate direct lighting using shadow rays
         glm::vec3 directLight = glm::vec3(0.0f);
@@ -147,14 +232,12 @@ namespace rayTracer {
     glm::vec3 Scene::calculateDirectLighting(const std::shared_ptr<Ray> ray) const
     {
         glm::vec3 allLightsContributions = glm::vec3(0.0);
-        int numShadowRays = 3;
-
         for (int index : emissiveObjectIndices)
         {
             glm::vec3 singleLightContribution = glm::vec3(0.0);
             std::shared_ptr<SceneObject> emissiveObject = sceneObjects[index];
 
-            for (int i = 0; i < numShadowRays; i++)
+            for (int i = 0; i < renderSettings.numShadowRays; i++)
             {
                 // Generate a shadow ray from the point of intersection to a random point on the light source
                 glm::vec3 randomPointOnEmissiveObject = emissiveObject->getRandomPointOnObject(ray, gen, dis);
@@ -163,7 +246,7 @@ namespace rayTracer {
                 singleLightContribution += getShadowRayContribution(ray, shadowRay);
             }
 
-            singleLightContribution *= (emissiveObject->radiance() * emissiveObject->area()) / float(numShadowRays);
+            singleLightContribution *= (emissiveObject->radiance() * emissiveObject->area()) / float(renderSettings.numShadowRays);
             allLightsContributions += singleLightContribution;
         }
 
